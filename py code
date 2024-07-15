@@ -17,21 +17,36 @@ def allf(positions, velocities, density_threshold):
   local_density = np.random.rand(density)
   linking_length = mean_sep * (local_density / density_threshold) ** (1/3)
 
-  for i in range(MM):
-    neighbors = []
-    for j in range(MM):
-      if i != j and np.linalg.norm(positions[i] - positions[j]) <= linking_length:
-        neighbors.append(j)
+  
+    for i in range(num_particles):
+        neighbors = []
+        for j in range(num_particles):
+            if i != j and np.linalg.norm(positions[i] - positions[j]) <= linking_length[i]:
+                neighbors.append(j)
 
-    if not neighbors:
-      continue
-    if all(halo_indices[j] == -1 for j in neighbors):
-      halo_index = len(halo_indices)
-      halo_indices[i:i+len(neighbors)] = halo_index
-    else:
-      halo_counts = np.bincount(halo_indices[neighbors])
-      halo_index = np.argmax(halo_counts)
-    halo_indices[i] = halo_index
+        if not neighbors:
+            continue
+
+        if all(halo_indices[j] == -1 for j in neighbors):
+            halo_index = len(set(halo_indices))  # Consider using np.unique(halo_indices) for efficiency
+            halo_indices[i:i + len(neighbors)] = halo_index
+            subhalo_indices[i:i + len(neighbors)] = 0  # All particles in new halo are initially subhalo 0
+
+        else:
+            halo_counts = np.bincount(halo_indices[neighbors])
+            halo_index = np.argmax(halo_counts)
+            halo_indices[i] = halo_index
+
+            # Subhalo assignment within identified halo
+            subhalo_counts = np.bincount(subhalo_indices[neighbors])
+            if np.sum(subhalo_counts) > 0:
+                subhalo_index = np.argmax(subhalo_counts) + 1  # Increment for new subhalo within existing halo
+            else:
+                subhalo_index = 0  # First subhalo within existing halo
+            subhalo_indices[i] = subhalo_index
+
+    return mean_sep, halo_indices, subhalo_indices
+
 
   return mean_sep, halo_indices
 
