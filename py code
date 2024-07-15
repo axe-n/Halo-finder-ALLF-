@@ -1,0 +1,53 @@
+import numpy as np
+import pandas as pd
+
+def findmeansep(positions):
+  MM = len(positions)
+  pairwise_dists = np.linalg.norm(positions[:, None] - positions[None], axis=2)
+  pairwise_dists -= np.diag(np.diag(pairwise_dists))
+  pairwise_dists[pairwise_dists == 0] = np.inf
+  min_dists = np.amin(pairwise_dists, axis=1)
+
+  return np.mean(min_dists[min_dists > 0])
+
+def allf(positions, velocities, density_threshold):
+  MM = len(positions)
+  halo_indices = np.full(MM, -1, dtype=int)
+  mean_sep = findmeansep(positions)
+  local_density = np.random.rand(density)
+  linking_length = mean_sep * (local_density / density_threshold) ** (1/3)
+
+  for i in range(MM):
+    neighbors = []
+    for j in range(MM):
+      if i != j and np.linalg.norm(positions[i] - positions[j]) <= linking_length:
+        neighbors.append(j)
+
+    if not neighbors:
+      continue
+    if all(halo_indices[j] == -1 for j in neighbors):
+      halo_index = len(halo_indices)
+      halo_indices[i:i+len(neighbors)] = halo_index
+    else:
+      halo_counts = np.bincount(halo_indices[neighbors])
+      halo_index = np.argmax(halo_counts)
+    halo_indices[i] = halo_index
+
+  return mean_sep, halo_indices
+
+directory = '/content/iterate'
+
+files= p('/content/iterate').glob('*')
+
+for file in files:
+ df =pd.read_csv(file)
+ positions = df[['x','y','z']].values
+ velocities = df[['vx','vy','vz']].values
+ density= pd.read_csv
+ density_threshold = 1.2
+
+mean_sep, halo_indices = allf(positions, velocities, density_threshold)
+
+print("Mean interparticle separation:", mean_sep)
+
+print("Halo membership for first 5 particles:", halo_indices[:5])
